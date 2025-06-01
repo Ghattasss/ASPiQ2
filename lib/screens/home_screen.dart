@@ -780,6 +780,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       description:
                           'تمارين للتعرف على المشاعر وإدارتها بفعالية.',
                       endpoint: 'http://aspiq.runasp.net/api/Reports/progress1',
+                      onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => TrainingSessionsScreen())),
                     ),
                     const SizedBox(height: 12),
                     ProgressBarCard(
@@ -787,6 +791,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       description:
                           'استكشف تمارين قيمة لتطوير مهاراتك الشخصية والاجتماعية!',
                       endpoint: 'http://aspiq.runasp.net/api/Reports/progress2',
+                      onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  TrainingSessionsScreenV2())),
                     ),
                     const SizedBox(height: 40),
                   ],

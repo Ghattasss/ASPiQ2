@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProgressBarCard extends StatefulWidget {
   final String title;
   final String description;
   final String endpoint;
+  final VoidCallback? onTap;
 
   const ProgressBarCard({
     Key? key,
     required this.title,
     required this.description,
     required this.endpoint,
+    this.onTap,
   }) : super(key: key);
 
   @override
@@ -30,7 +33,25 @@ class _ProgressBarCardState extends State<ProgressBarCard> {
 
   Future<void> _fetchProgress() async {
     try {
-      final response = await http.get(Uri.parse(widget.endpoint));
+      final prefs = await SharedPreferences.getInstance();
+      final jwtToken = prefs.getString('auth_token');
+
+      if (jwtToken == null) {
+        // Handle case where token is not available (e.g., user not logged in)
+        setState(() {
+          _isLoading = false;
+        });
+        print('JWT token not found.');
+        return;
+      }
+
+      final response = await http.get(
+        Uri.parse(widget.endpoint),
+        headers: {
+          'accept': '*/*',
+          'Authorization': 'Bearer $jwtToken',
+        },
+      );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -58,50 +79,72 @@ class _ProgressBarCardState extends State<ProgressBarCard> {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.title,
-              style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).primaryColor,
-              ),
-            ),
-            SizedBox(height: 8.0),
-            Text(
-              widget.description,
-              style: TextStyle(
-                fontSize: 14.0,
-                color: Colors.grey[600],
-              ),
-            ),
-            SizedBox(height: 16.0),
-            _isLoading
-                ? CircularProgressIndicator()
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      LinearProgressIndicator(
-                        value: _progress,
-                        backgroundColor: Colors.grey[300],
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                            Theme.of(context).primaryColor),
-                      ),
-                      SizedBox(height: 8.0),
-                      Text(
-                        'اكتمل بنسبة ${(_progress * 100).toInt()}%',
-                        style: TextStyle(
-                          fontSize: 12.0,
-                          color: Colors.grey[600],
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.title,
+                          style: TextStyle(
+                            fontSize: 18.0,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).primaryColor,
+                          ),
                         ),
-                      ),
-                    ],
+                        SizedBox(height: 8.0),
+                        Text(
+                          widget.description,
+                          style: TextStyle(
+                            fontSize: 14.0,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-          ],
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 20.0,
+                    color:
+                        Colors.grey[600], // You can adjust the color if needed
+                  ),
+                ],
+              ),
+              SizedBox(height: 16.0),
+              _isLoading
+                  ? CircularProgressIndicator()
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        LinearProgressIndicator(
+                          value: _progress,
+                          backgroundColor: Colors.grey[300],
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              Theme.of(context).primaryColor),
+                        ),
+                        SizedBox(height: 8.0),
+                        Text(
+                          'اكتمل بنسبة ${(_progress * 100).toInt()}%',
+                          style: TextStyle(
+                            fontSize: 12.0,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+            ],
+          ),
         ),
       ),
     );
